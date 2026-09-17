@@ -2,7 +2,7 @@
 
 A Spring Cloud banking platform built as independent Maven Spring Boot services. The long-term goal is a complete digital banking architecture: customer management, bank accounts and operations, service discovery, an API gateway, resilience, centralized configuration, a Spring AI chatbot, MCP, an Angular frontend, and Telegram integration.
 
-The project currently has a completed foundation plus working **Customer Service**, **EBank Service**, and a standalone **Eureka Discovery Server**. Customer and EBank services are not registered with Eureka yet.
+The project currently has working **Customer Service**, **EBank Service**, **Eureka Discovery Server**, and a **Gateway** that routes dynamically through Eureka Discovery Locator. OpenFeign is not implemented yet.
 
 ## Planned microservices
 
@@ -43,15 +43,15 @@ These integrations are **not present yet**. They will be added in later steps.
 **Completed**
 
 - Root Maven aggregator for the four independent services
-- Empty Spring Boot 3.5 application on Java 21 for `gateway-service`
 - **Customer Service** REST API on port `8056` (JPA, H2, Actuator, Swagger UI)
 - **EBank Service** REST API on port `8057` (JPA, H2, Actuator, Swagger UI)
 - **Discovery Service** Eureka Server on port `8761`
+- **Gateway Service** on port `9999` with Eureka Discovery Locator
+- Eureka client registration for Customer Service, EBank Service, and Gateway
 
 **Not started**
 
-- Eureka client registration for Customer Service and EBank Service
-- API Gateway routing, OpenFeign, or Resilience4j
+- OpenFeign or Resilience4j
 - Config Server, Spring AI, MCP, Angular, Telegram, or Docker
 
 ## Customer Service
@@ -103,7 +103,25 @@ mvn -pl discovery-service spring-boot:run
 | Eureka dashboard | `http://localhost:8761` |
 | Health | `GET http://localhost:8761/actuator/health` |
 
-This is a standalone Eureka Server (`register-with-eureka=false`, `fetch-registry=false`). Other services are not registered yet.
+This is a standalone Eureka Server (`register-with-eureka=false`, `fetch-registry=false`). Customer, EBank, and Gateway register as clients.
+
+Start order: Discovery → Customer → Gateway → EBank.
+
+## Gateway Service
+
+Run from the repository root after Discovery Service (`8761`) is up:
+
+```bash
+mvn -pl gateway-service spring-boot:run
+```
+
+| Resource | URL |
+| --- | --- |
+| Customers via Gateway | `GET http://localhost:9999/CUSTOMER-SERVICE/customers` |
+| Accounts via Gateway | `GET http://localhost:9999/EBANK-SERVICE/accounts` |
+| Health | `GET http://localhost:9999/actuator/health` |
+
+Routes come from Eureka Discovery Locator. Static `http://localhost:8056` / `8057` routes are no longer used.
 
 ## Project structure
 
