@@ -1,9 +1,11 @@
 package com.example.ebank.bank.entities;
 
+import com.example.ebank.bank.model.Customer;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Transient;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,4 +32,7 @@ public class BankAccount {
     private String type;
 
     private Long customerId;
+
+    @Transient
+    private Customer customer;
 }

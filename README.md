@@ -2,7 +2,7 @@
 
 A Spring Cloud banking platform built as independent Maven Spring Boot services. The long-term goal is a complete digital banking architecture: customer management, bank accounts and operations, service discovery, an API gateway, resilience, centralized configuration, a Spring AI chatbot, MCP, an Angular frontend, and Telegram integration.
 
-The project currently has working **Customer Service**, **EBank Service**, **Eureka Discovery Server**, and a **Gateway** that routes dynamically through Eureka Discovery Locator. OpenFeign is not implemented yet.
+The project currently has working **Customer Service**, **EBank Service**, **Eureka Discovery Server**, and a **Gateway** that routes dynamically through Eureka Discovery Locator. **EBank Service** calls **Customer Service** with Spring Cloud OpenFeign, resolving `CUSTOMER-SERVICE` through Eureka. A Resilience4j Circuit Breaker protects account-by-id customer lookup and returns a fallback Customer when Customer Service is unavailable.
 
 ## Planned microservices
 
@@ -15,7 +15,7 @@ The project currently has working **Customer Service**, **EBank Service**, **Eur
 
 ## Planned architecture
 
-Clients will reach the platform through `gateway-service`. The gateway will route traffic to backend services registered in `discovery-service`. `customer-service` and `ebank-service` will communicate with OpenFeign and be protected by Resilience4j. Later stages will add a Config Server, Spring AI chatbot, MCP, Angular frontend, and Telegram integration.
+Clients will reach the platform through `gateway-service`. The gateway routes traffic to backend services registered in `discovery-service`. `ebank-service` calls `customer-service` with OpenFeign (`CUSTOMER-SERVICE` via Eureka). A Resilience4j Circuit Breaker (`customerService`) protects GET-by-id customer lookup. Later stages will add a Config Server, Spring AI chatbot, MCP, Angular frontend, and Telegram integration.
 
 ```
 [ Angular / Telegram ]
@@ -33,10 +33,10 @@ customer-service  ebank-service
    |             |
    +------+------+
           |
-     OpenFeign + Resilience4j
+     OpenFeign + Circuit Breaker (EBank -> Customer)
 ```
 
-These integrations are **not present yet**. They will be added in later steps.
+OpenFeign and Resilience4j Circuit Breaker are implemented. Retry, RateLimiter, Bulkhead, and TimeLimiter are **not** used.
 
 ## Current implementation status
 
@@ -48,10 +48,11 @@ These integrations are **not present yet**. They will be added in later steps.
 - **Discovery Service** Eureka Server on port `8761`
 - **Gateway Service** on port `9999` with Eureka Discovery Locator
 - Eureka client registration for Customer Service, EBank Service, and Gateway
+- OpenFeign: EBank Service retrieves and validates customers through `CUSTOMER-SERVICE` (Eureka, not `localhost:8056`)
+- Resilience4j Circuit Breaker on GET `/accounts/{id}` customer lookup, with fallback Customer (`Not Available` / `not available`)
 
 **Not started**
 
-- OpenFeign or Resilience4j
 - Config Server, Spring AI, MCP, Angular, Telegram, or Docker
 
 ## Customer Service
@@ -88,7 +89,7 @@ mvn -pl ebank-service spring-boot:run
 | Swagger UI | `http://localhost:8057/swagger-ui.html` |
 | H2 console | `http://localhost:8057/h2-console` (JDBC URL `jdbc:h2:mem:ebankdb`) |
 
-`BankAccount.customerId` is a plain Long referencing a customer in Customer Service. There is no JPA relationship and no OpenFeign call yet.
+`BankAccount.customerId` is a plain Long. The nested `customer` field is `@Transient` (not stored in EBank's H2 database). `GET /accounts/{id}` loads the customer through `CustomerLookupService`, which calls `CustomerRestClient` (`@FeignClient(name = "CUSTOMER-SERVICE")`) behind a Resilience4j Circuit Breaker named `customerService`. If Customer Service is down, the account is still returned with a fallback Customer (same id, name `Not Available`, email `not available`). `POST /accounts` still validates the customer through Feign with no fallback; save fails if that customer cannot be retrieved.
 
 ## Discovery Service
 
