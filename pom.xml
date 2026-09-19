@@ -17,5 +17,6 @@
         <module>ebank-service</module>
         <module>discovery-service</module>
         <module>gateway-service</module>
+        <module>ebank-bot</module>
     </modules>
 </project>
