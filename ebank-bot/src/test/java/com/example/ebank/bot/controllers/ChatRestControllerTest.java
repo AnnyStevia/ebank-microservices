@@ -15,6 +15,7 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -43,6 +44,7 @@ class ChatRestControllerTest {
     void chatWithQueryReturnsModelContent() throws Exception {
         mockMvc.perform(get("/chat").param("query", "hello"))
                 .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
                 .andExpect(content().string("mocked-chat-response"));
     }
 
@@ -50,6 +52,7 @@ class ChatRestControllerTest {
     void chatWithoutQueryUsesBonjourDefault() throws Exception {
         mockMvc.perform(get("/chat"))
                 .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
                 .andExpect(content().string("mocked-chat-response"));
     }
 
@@ -59,6 +62,7 @@ class ChatRestControllerTest {
                         .param("query", "My name is Mohammed")
                         .param("conversationId", "1"))
                 .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
                 .andExpect(content().string("mocked-chat-response"));
     }
 }

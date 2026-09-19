@@ -35,6 +35,7 @@ class GatewayServiceApplicationTests {
         assertThat(routes).isNotNull();
         assertThat(routes)
                 .noneMatch(route -> "http://localhost:8056".equals(route.getUri().toString()))
-                .noneMatch(route -> "http://localhost:8057".equals(route.getUri().toString()));
+                .noneMatch(route -> "http://localhost:8057".equals(route.getUri().toString()))
+                .noneMatch(route -> "http://localhost:8058".equals(route.getUri().toString()));
     }
 }
